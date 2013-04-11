@@ -10,8 +10,8 @@ for line in file("uid-bib-_-_-id-lid-klynge-dato-klyngelaan.db"):
     faust = fields[5]
     klynge = fields[6]
 
-    db.coloan.insert({"_id": klynge, "faust": faust, "borrower": []})
-    db.coloan.update({"_id": klynge}, {"$push": {"borrower": borrower}})
+    db.coloan.insert({"_id": klynge, "borrower": []})
+    db.coloan.update({"_id": klynge}, {"$addToSet": {"borrower": borrower}})
 
     if count % 1000 is 0:
         print count
