@@ -1,12 +1,7 @@
 # Source code
 
-    coLoanDB = new Meteor.Collection("coloan") 
-
     bookDB = new Meteor.Collection("book") 
     patronDB = new Meteor.Collection("patron") 
-
-    if Meteor.isServer
-        coLoanDB._ensureIndex {borrower: 1}
 
     if Meteor.isServer
         Meteor.methods
@@ -18,13 +13,8 @@
 
     graphNeighbours = (klynge) ->
         result = {}
-        patrons = (bookDB.findOne {_id: klynge}).patrons
-
-        console.log patrons
-
-        for patron in patrons
-            books = (patronDB.findOne {_id: patron}).books
-            for book in books
+        for patron in (bookDB.findOne {_id: klynge}).patrons
+            for book in (patronDB.findOne {_id: patron}).books
                 objInc result, book
         result
 
