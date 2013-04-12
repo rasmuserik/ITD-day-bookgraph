@@ -1,10 +1,11 @@
 # Source code
 
     coLoanDB = new Meteor.Collection("coloan") 
-    coLoanCacheDB = new Meteor.Collection("coloanCache") 
+
+    bookDB = new Meteor.Collection("book") 
+    patronDB = new Meteor.Collection("patron") 
 
     if Meteor.isServer
-        Fiber = Npm.require "fibers" 
         coLoanDB._ensureIndex {borrower: 1}
 
     if Meteor.isServer
@@ -17,11 +18,14 @@
 
     graphNeighbours = (klynge) ->
         result = {}
-        book = coLoanDB.findOne {_id: klynge}
+        patrons = (bookDB.findOne {_id: klynge}).patrons
 
-        for patron in book.borrower
-            loans = coLoanDB.find {borrower: patron}, {_id: true, borrower: false}
-            loans.fetch().map ((obj) -> objInc result, obj._id)
+        console.log patrons
+
+        for patron in patrons
+            books = (patronDB.findOne {_id: patron}).books
+            for book in books
+                objInc result, book
         result
 
 
@@ -29,3 +33,8 @@
         Meteor.startup ->
             Meteor.call "neighbours", "34647226", (err, result) ->
                 console.log result
+
+            w = 900
+            h = 400
+
+            force = d3.layout.force()
