@@ -2,6 +2,8 @@
 
     bookDB = new Meteor.Collection("book") 
     patronDB = new Meteor.Collection("patron") 
+    klyngeDB = new Meteor.Collection("klynge") 
+    faustDB = new Meteor.Collection("faust") 
 
     if Meteor.isServer
         Meteor.methods

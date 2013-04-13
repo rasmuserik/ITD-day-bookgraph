@@ -10,6 +10,9 @@ for line in file("uid-bib-_-_-id-lid-klynge-dato-klyngelaan.db"):
     faust = fields[5]
     klynge = fields[6]
 
+    db.klynge.insert({"_id": klynge, "faust": faust})
+    db.faust.insert({"_id": faust, "faust": klynge})
+
     db.book.insert({"_id": klynge, "patrons": []})
     db.book.update({"_id": klynge}, {"$addToSet": {"patrons": patron}})
 
