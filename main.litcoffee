@@ -22,12 +22,7 @@
 # Source code
 
 
-    if Meteor.isServer
-        Meteor.methods
-            neighbours: (klynge) ->
-                graphNeighbours klynge
-            lookupTitle: (klynge) ->
-                lookupTitle klynge
+## Server commands
 
     lookupTitle = (klynge) ->
         bibdkurl = "http://bibliotek.dk/vis.php?origin=kommando&term1=lid%3D" 
@@ -38,7 +33,7 @@
         re = /<span id="linkSign-item1"[^<]*<.span..nbsp.([^<]*)/
         title = (html.match re)[1]
         klyngeDB.update {_id: klynge}, {"$set": {"title": title}}
-        return title
+        title
 
     objInc = (obj, key) ->
         obj[key] = (obj[key] || 0) + 1
@@ -50,9 +45,43 @@
                 objInc result, book
         result
 
+    klyngePatrons = (klynge) ->
+        (bookDB.findOne {_id: klynge}, {patrons: true}).patrons
+
+    patronKlynger = (patron) ->
+        (patronDB.findOne {_id: patron}, {books: true}).books
+
+    if Meteor.isServer
+        Meteor.methods
+            neighbours: graphNeighbours
+            lookupTitle: lookupTitle
+            patronKlynger: patronKlynger
+            klyngePatrons: klyngePatrons
+
+## Create graph
+
+    graph = 
+        patrons: {}
+        books: {}
+
+    updateGraphWithBook = (klynge, callback) ->
+        if graph.books[klynge]
+            return
+        Meteor.call "klyngePatrons", klynge, (err, result) ->
+            if err 
+                throw err
+            updateGraphWithPatron
+
 
     if Meteor.isClient
         Meteor.startup ->
+            Meteor.call "klyngePatrons", "34647226", (err, result) ->
+                if err
+                    throw err
+                console.log "patrons", result
+                Meteor.call "patronKlynger", result[0], (err, result) ->
+                    console.log "klynger", result
+
             Meteor.call "neighbours", "34647226", (err, result) ->
                 0
                 # console.log result 
