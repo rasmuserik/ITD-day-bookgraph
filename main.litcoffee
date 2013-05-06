@@ -58,20 +58,7 @@
             patronKlynger: patronKlynger
             klyngePatrons: klyngePatrons
 
-## Create graph
-
-    graph = 
-        patrons: {}
-        books: {}
-
-    updateGraphWithBook = (klynge, callback) ->
-        if graph.books[klynge]
-            return
-        Meteor.call "klyngePatrons", klynge, (err, result) ->
-            if err 
-                throw err
-            updateGraphWithPatron
-
+## Experiments
 
     if Meteor.isClient
         Meteor.startup ->
@@ -108,13 +95,24 @@
                 , 2000)
             drawGraph nodes, links
 
+## Shared graph definitions
+
+    svg = undefined
+
+## Draw a graph given nodes
+
     drawGraph = (nodes, links) ->
+
+### SVG setup
+
             w = window.innerWidth
             h = window.innerHeight
 
             svg = d3.select("#graph").append("svg")
             svg.attr("width", w)
             svg.attr("height", h)
+
+### Create force graph
 
             force = d3.layout.force()
             force.charge -120
@@ -124,6 +122,8 @@
             force.links links
             force.start()
 
+
+### Draw the links and nodes
 
             link = svg
                 .selectAll(".link")
@@ -145,6 +145,8 @@
                 .attr("class", "node")
                 .call(force.drag)
 
+### Update layout
+
             force.on "tick", ->
                 link.attr("x1", (d) -> d.source.x)
                     .attr("y1", (d) -> d.source.y)
@@ -156,6 +158,12 @@
                     .attr("y", (d) -> d.y + 2)
                     .text((d) -> d.name)
 
+## Initialise Graph
+## Add node
+## Remove node
+## Add edge
+## Remove edge
+## Test/experiment
 
 # patronstat-vis
 
