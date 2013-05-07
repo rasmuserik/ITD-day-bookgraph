@@ -26,7 +26,10 @@
 
     lookupTitle = (klynge) ->
         bibdkurl = "http://bibliotek.dk/vis.php?origin=kommando&term1=lid%3D" 
-        klyngeDesc =  klyngeDB.findOne klynge
+        klyngeDesc =  klyngeDB.findOne {_id: klynge}
+        console.log klynge, bibdkurl 
+        if not klyngeDesc
+            throw "cannot finde klynge " + klynge
         return klyngeDesc.title if klyngeDesc.title
         faust = klyngeDesc.faust
         html = (Meteor.http.get bibdkurl + faust).content
@@ -62,6 +65,8 @@
 
     if Meteor.isClient
         Meteor.startup ->
+            doGraph "34647226"
+    if false
             Meteor.call "klyngePatrons", "34647226", (err, result) ->
                 if err
                     throw err
@@ -94,6 +99,37 @@
                     #links[0].target = 2
                 , 2000)
             # drawGraph nodes, links
+
+# Traverse/draw graph
+
+    doGraph  = (klynge) ->
+        graph = {}
+        graph[klynge] = {_id: klynge}
+        patrons = {}
+        doDrawGraph = ->
+            nodes = (node for _, node in graph)
+            for node in nodes
+                node.children = []
+            for _, patron of patrons
+                for i in [0..patron.length-1] by 1
+                    for j in [i..patron.length-1] by 1
+                        book1 = graph[patron[i]]
+                        book2 = graph[patron[i]]
+                        console.log book1, book2
+                        if book1 and book2
+                            book1.children.push book2
+                            book2.children.push book1
+            graphNodes nodes
+        Meteor.call "klyngePatrons", klynge, (err, patronlist) ->
+            throw err if err
+            for patron in patronlist.slice(0, 1)
+                console.log "patron:", patron
+                Meteor.call "patronKlynger", patron, (err, result) ->
+                    console.log err, result
+                    throw err if err
+                    patrons[patron] = result
+                    doDrawGraph()
+
 
 ## Shared graph definitions
 
@@ -215,20 +251,21 @@
             node
                 .attr("x", (d) -> d.x)
                 .attr("y", (d) -> d.y + 2)
-                .text((d) -> d.label or d.id)
+                .text((d) -> d.label or d._id)
 
     updateLabel = (node) ->
         return if node.label isnt undefined
         node.label = ""
-        Meteor.call "lookupTitle", node.id, (err, result) ->
-            throw err if err throw err
+        console.log node._id, typeof node._id
+        Meteor.call "lookupTitle", node._id, (err, result) ->
+            throw err if err 
             console.log result, node
             node.label = result
 
     graphNodes = (nodeList) ->
         nodes = {}
         links = []
-        nodes[node.id] = node for node in nodeList
+        nodes[node._id] = node for node in nodeList
 
         for _, node of nodes
             for child in node.links
@@ -246,18 +283,18 @@
 
 ## Test/experiment
 
-    if Meteor.isClient then Meteor.startup ->
+    if false and Meteor.isClient then Meteor.startup ->
         graph = [
-            { id: "501663", links: ["603244", "26495", "95540"] }
-            { id: "603244", links: ["501663", "95540"] }
-            { id: "26495", links: ["501663", "255722"] }
-            { id: "95540", links: ["603244", "501663"] }
-            { id: "255722", links: ["26495"] }
+            { _id: "501663", links: ["603244", "26495", "95540"] }
+            { _id: "603244", links: ["501663", "95540"] }
+            { _id: "26495", links: ["501663", "255722"] }
+            { _id: "95540", links: ["603244", "501663"] }
+            { _id: "255722", links: ["26495"] }
         ]
         graphNodes graph
         setTimeout (->
-            graph.push {id: "694326", links: ["501663", "255722", "231710"]}
-            graph.push {id: "231710", links: ["694326", "255722"]}
+            graph.push {_id: "694326", links: ["501663", "255722", "231710"]}
+            graph.push {_id: "231710", links: ["694326", "255722"]}
             graphNodes graph
         ), 3000
 
