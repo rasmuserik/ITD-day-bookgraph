@@ -4,21 +4,31 @@ db = pymongo.Connection(host='127.0.0.1', port=3002).meteor
 
 
 books = {}
+count = 0
+avgKeys = 0
+nonZero = 0
 
 def similarBook(book):
     books[book] = books.get(book, 0) + 1
 
 def bookDone(current):
-    global books
+    global books, avgKeys, count, nonZero
     if current is "":
         return
     result = {}
     for key, val in books.items():
-        if val > 1:
+        if val > 0:
             result[key] = val
     if len(result.items()) > 0:
+        nonZero = nonZero + 1
         db.adhl.update({"_id": current}, {"_id": current, "coloans": result}, upsert=True)
+    avgKeys = avgKeys + len(result.items())
     books = {}
+    if count % 500 is 0:
+        print count, avgKeys / 500.0, nonZero / 500.0
+        avgKeys = 0
+        nonZero = 0
+    count = count + 1
 
 
 prevBook = ""
