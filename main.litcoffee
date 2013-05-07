@@ -107,18 +107,25 @@
         graph[klynge] = {_id: klynge}
         patrons = {}
         doDrawGraph = ->
-            nodes = (node for _, node in graph)
+            nodes = (node for _, node of graph)
             for node in nodes
-                node.children = []
+                node.children = {}
+            console.log nodes, graph
             for _, patron of patrons
                 for i in [0..patron.length-1] by 1
                     for j in [i..patron.length-1] by 1
-                        book1 = graph[patron[i]]
-                        book2 = graph[patron[i]]
-                        console.log book1, book2
-                        if book1 and book2
-                            book1.children.push book2
-                            book2.children.push book1
+                        book1 = patron[i]
+                        book2 = patron[j]
+                        # console.log patron[i], patron[j], book1, book2
+                        if graph[book1] and graph[book2] and book1 isnt book2
+                            graph[book1].children[book2] = (graph[book1].children[book2] or 0) + 1
+                            graph[book2].children[book1] = (graph[book2].children[book1] or 0) + 1
+            for node in nodes
+                links = []
+                for child of node.children
+                    links.push child
+                node.links = links
+
             graphNodes nodes
         Meteor.call "klyngePatrons", klynge, (err, patronlist) ->
             throw err if err
