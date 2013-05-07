@@ -1,3 +1,3 @@
 python genjoin.py > book-book.db
-sort --parallel=`cat /proc/cpuinfo | grep processor | wc -l` book-book.db > book-book.db.sorted
+sort --parallel=`node -e "console.log(require('os').cpus().length>>1)"` book-book.db > book-book.db.sorted
 python handlejoin.py < book-book.db.sorted

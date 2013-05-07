@@ -6,6 +6,7 @@
     klyngeDB = new Meteor.Collection("klynge") 
     faustDB = new Meteor.Collection("faust") 
     statDB = new Meteor.Collection("patronstat") 
+    adhlDB = new Meteor.Collection("adhl") 
 
 ## Publishing
 
