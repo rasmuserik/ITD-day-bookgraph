@@ -93,11 +93,12 @@
                     #    weight: 1
                     #links[0].target = 2
                 , 2000)
-            drawGraph nodes, links
+            # drawGraph nodes, links
 
 ## Shared graph definitions
 
     svg = undefined
+    force = undefined
 
 ## Draw a graph given nodes
 
@@ -159,11 +160,88 @@
                     .text((d) -> d.name)
 
 ## Initialise Graph
-## Add node
-## Remove node
-## Add edge
-## Remove edge
+
+    if Meteor.isClient then Meteor.startup ->
+        undefined
+
+## Update graph nodes
+
+    graphNodes = (nodeList) ->
+        w = window.innerWidth
+        h = window.innerHeight
+        svg = d3.select("#graph").append("svg")
+        svg.attr("width", w)
+        svg.attr("height", h)
+        force = d3.layout.force()
+        force.charge -120
+        force.linkDistance 30
+        force.size [w, h]
+
+        nodes = {}
+        links = []
+        nodes[node.id] = node for node in nodeList
+
+        for _, node of nodes
+            for child in node.links
+                links.push
+                    source: node
+                    target: nodes[child]
+
+        force.nodes nodeList
+        force.links links
+        force.start()
+        console.log("HERE", nodes, links)
+
+        # svg.selectAll(".link").exit()
+        # svg.selectAll(".node").exit()
+
+        link = svg
+            .selectAll(".link")
+            .data(links)
+            .enter()
+            .append("line")
+            .attr("class", "link")
+            .style("stroke", "#999")
+            .style("stroke-width", 1)
+
+        node = svg
+            .selectAll(".node")
+            .data(nodes)
+            .enter()
+            .append("text")
+            .style("font", "12px sans-serif")
+            .style("text-anchor", "middle")
+            .style("text-shadow", "1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white")
+            .attr("class", "node")
+            .call(force.drag)
+
+        force.on "tick", ->
+            link.attr("x1", (d) -> d.source.x)
+                .attr("y1", (d) -> d.source.y)
+                .attr("x2", (d) -> d.target.x)
+                .attr("y2", (d) -> d.target.y)
+
+            node
+                .attr("x", (d) -> d.x)
+                .attr("y", (d) -> d.y + 2)
+                .text((d) -> "HELLO")
+
 ## Test/experiment
+
+    if Meteor.isClient then Meteor.startup ->
+        graph = [
+            { id: "a", links: ["b", "c", "d"] }
+            { id: "b", links: ["a", "d"] }
+            { id: "c", links: ["a", "e"] }
+            { id: "d", links: ["b", "a"] }
+            { id: "e", links: ["c"] }
+        ]
+        graphNodes graph
+        setTimeout (->
+            graph.push {id: "f", links: "a", "e"}
+            graph.push {id: "g", links: "f", "e"}
+            graphNodes graph
+        ), 3000
 
 # patronstat-vis
 
