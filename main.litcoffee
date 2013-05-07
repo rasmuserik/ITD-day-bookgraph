@@ -162,35 +162,26 @@
 ## Initialise Graph
 
     if Meteor.isClient then Meteor.startup ->
-        undefined
-
-## Update graph nodes
-
-    graphNodes = (nodeList) ->
         w = window.innerWidth
         h = window.innerHeight
-        svg = d3.select("#graph").append("svg")
-        svg.attr("width", w)
-        svg.attr("height", h)
         force = d3.layout.force()
         force.charge -120
         force.linkDistance 30
         force.size [w, h]
+        force.on "tick", -> updateForce()
+        undefined
 
-        nodes = {}
-        links = []
-        nodes[node.id] = node for node in nodeList
+## Update graph nodes
 
-        for _, node of nodes
-            for child in node.links
-                links.push
-                    source: node
-                    target: nodes[child]
+    updateForce= -> undefined
 
-        force.nodes nodeList
-        force.links links
-        force.start()
-        console.log("HERE", nodes, links)
+    drawGraph = (links, nodes)->
+        w = window.innerWidth
+        h = window.innerHeight
+        document.getElementById("graph").innerHTML = ""
+        svg = d3.select("#graph").append("svg")
+        svg.attr("width", w)
+        svg.attr("height", h)
 
         # svg.selectAll(".link").exit()
         # svg.selectAll(".node").exit()
@@ -215,7 +206,7 @@
             .attr("class", "node")
             .call(force.drag)
 
-        force.on "tick", ->
+        updateForce = ->
             link.attr("x1", (d) -> d.source.x)
                 .attr("y1", (d) -> d.source.y)
                 .attr("x2", (d) -> d.target.x)
@@ -224,22 +215,49 @@
             node
                 .attr("x", (d) -> d.x)
                 .attr("y", (d) -> d.y + 2)
-                .text((d) -> "HELLO")
+                .text((d) -> d.label or d.id)
+
+    updateLabel = (node) ->
+        return if node.label isnt undefined
+        node.label = ""
+        Meteor.call "lookupTitle", node.id, (err, result) ->
+            throw err if err throw err
+            console.log result, node
+            node.label = result
+
+    graphNodes = (nodeList) ->
+        nodes = {}
+        links = []
+        nodes[node.id] = node for node in nodeList
+
+        for _, node of nodes
+            for child in node.links
+                links.push
+                    source: node
+                    target: nodes[child]
+
+        force.nodes nodeList
+        force.links links
+        force.start()
+        nodeList.map updateLabel
+        drawGraph(links, nodeList)
+        console.log("HERE", nodes, links)
+
 
 ## Test/experiment
 
     if Meteor.isClient then Meteor.startup ->
         graph = [
-            { id: "a", links: ["b", "c", "d"] }
-            { id: "b", links: ["a", "d"] }
-            { id: "c", links: ["a", "e"] }
-            { id: "d", links: ["b", "a"] }
-            { id: "e", links: ["c"] }
+            { id: "501663", links: ["603244", "26495", "95540"] }
+            { id: "603244", links: ["501663", "95540"] }
+            { id: "26495", links: ["501663", "255722"] }
+            { id: "95540", links: ["603244", "501663"] }
+            { id: "255722", links: ["26495"] }
         ]
         graphNodes graph
         setTimeout (->
-            graph.push {id: "f", links: "a", "e"}
-            graph.push {id: "g", links: "f", "e"}
+            graph.push {id: "694326", links: ["501663", "255722", "231710"]}
+            graph.push {id: "231710", links: ["694326", "255722"]}
             graphNodes graph
         ), 3000
 
