@@ -13,7 +13,6 @@
     if Meteor.isServer
         Meteor.publish "faust", (faust) ->
             klynge = faustDB.findOne {_id: faust}
-            console.log "subscribe:", klynge
             if not klynge
                 []
             else
@@ -28,7 +27,6 @@
     lookupTitle = (klynge) ->
         bibdkurl = "http://bibliotek.dk/vis.php?origin=kommando&term1=lid%3D" 
         klyngeDesc =  klyngeDB.findOne {_id: klynge}
-        console.log klynge, bibdkurl 
         if not klyngeDesc
             throw "cannot finde klynge " + klynge
         return klyngeDesc.title if klyngeDesc.title
@@ -56,9 +54,7 @@
         (patronDB.findOne {_id: patron}, {books: true}).books
 
     adhl = (klynge) ->
-        x = (adhlDB.findOne {_id: klynge})
-        console.log "ADHL", x, klynge
-        x
+        (adhlDB.findOne {_id: klynge})?.coloans || {}
 
     if Meteor.isServer
         Meteor.methods
@@ -72,146 +68,53 @@
 
     if Meteor.isClient
         Meteor.startup ->
-            #doGraph "10006220"
-            doGraph "10005802"
-    if false
-            Meteor.call "klyngePatrons", "34647226", (err, result) ->
-                if err
-                    throw err
-                console.log "patrons", result
-                Meteor.call "patronKlynger", result[0], (err, result) ->
-                    console.log "klynger", result
-
-            Meteor.call "neighbours", "34647226", (err, result) ->
-                0
-                # console.log result 
-                #for klynge of result
-                #    Meteor.call "lookupTitle", klynge, (err, result) ->
-
-            Meteor.call "lookupTitle", "34647226", (err, result) ->
-                console.log result
-
-            nodes = [{name: "a a"}, {name: "b"}, {name: "c"}, {name: "d"}]
-            links = [
-                {source: 0, target: 1, weight: 1}
-                {source: 1, target: 2, weight: 1}
-                {source: 2, target: 3, weight: 1}
-                {source: 3, target: 1, weight: 1}
-                ]
-            setTimeout(->
-                    nodes[0].name = "b b"
-                    #links.push
-                    #    source: 0
-                    #    target: 1
-                    #    weight: 1
-                    #links[0].target = 2
-                , 2000)
-            # drawGraph nodes, links
+            #addGraphNodes "10005802", 15
+            #addGraphNodes "10006220", 15
+            #addGraphNodes "40336644", 15
+            addGraphNodes "19037457", 30
+            
 
 # Traverse/draw graph
 
-    doGraph  = (klynge) ->
-        Meteor.call "adhl", klynge, (err, data) ->
-            console.log "adhl", err, data
+    graph = {}
 
-        graph = {}
-        graph[klynge] = {_id: klynge}
-        patrons = {}
-        doDrawGraph = ->
-            nodes = (node for _, node of graph)
-            for node in nodes
-                node.children = {}
-            console.log nodes, graph
-            for _, patron of patrons
-                for i in [0..patron.length-1] by 1
-                    for j in [i..patron.length-1] by 1
-                        book1 = patron[i]
-                        book2 = patron[j]
-                        # console.log patron[i], patron[j], book1, book2
-                        if graph[book1] and graph[book2] and book1 isnt book2
-                            graph[book1].children[book2] = (graph[book1].children[book2] or 0) + 1
-                            graph[book2].children[book1] = (graph[book2].children[book1] or 0) + 1
-            for node in nodes
-                links = []
-                for child of node.children
-                    links.push child
-                node.links = links
-
-            graphNodes nodes
-        Meteor.call "klyngePatrons", klynge, (err, patronlist) ->
+    addGraphNodes = (node, depth) ->
+        return undefined if graph[node] isnt undefined
+        graph[node] = {_id: node}
+        Meteor.call "adhl", node, (err, data) ->
             throw err if err
-            for patron in patronlist.slice(0, 1)
-                console.log "patron:", patron
-                Meteor.call "patronKlynger", patron, (err, result) ->
-                    console.log err, result
-                    throw err if err
-                    patrons[patron] = result
-                    doDrawGraph()
+            children = Object.keys(data).filter (a) -> data[a] > 2
+            children.sort (a, b) -> data[b] - data[a]
+            graph[node].children = children.slice 1, 10
+            children = children.slice 1, depth
+            depth = depth * 0.6 | 0
+            addGraphNodes(child, depth) for child in children if depth > 2
 
+    if Meteor.isClient then Meteor.startup ->
+        setTimeout doDrawGraph, 4000
+
+    doDrawGraph = ->
+        nodes = (node for _, node of graph)
+        links = []
+        for sourceId, source of graph
+            for targetId in source.children
+                if graph[targetId]
+                    links.push
+                        source: source
+                        target: graph[targetId]
+                
+        console.log "doDrawGraph", nodes, links
+        force.nodes nodes
+        force.links links
+        force.gravity(0.01)
+        force.start()
+        nodes.map updateLabel
+        drawGraph(links, nodes)
 
 ## Shared graph definitions
 
     svg = undefined
     force = undefined
-
-## Draw a graph given nodes
-
-    drawGraph = (nodes, links) ->
-
-### SVG setup
-
-            w = window.innerWidth
-            h = window.innerHeight
-
-            svg = d3.select("#graph").append("svg")
-            svg.attr("width", w)
-            svg.attr("height", h)
-
-### Create force graph
-
-            force = d3.layout.force()
-            force.charge -120
-            force.linkDistance 30
-            force.size [w, h]
-            force.nodes nodes
-            force.links links
-            force.start()
-
-
-### Draw the links and nodes
-
-            link = svg
-                .selectAll(".link")
-                .data(links)
-                .enter()
-                .append("line")
-                .attr("class", "link")
-                .style("stroke", "#999")
-                .style("stroke-width", 1)
-
-            node = svg
-                .selectAll(".node")
-                .data(nodes)
-                .enter()
-                .append("text")
-                .style("font", "12px sans-serif")
-                .style("text-anchor", "middle")
-                .style("text-shadow", "1px 1px 0px white, -1px -1px 0px white, 1px -1px 0px white, -1px 1px 0px white")
-                .attr("class", "node")
-                .call(force.drag)
-
-### Update layout
-
-            force.on "tick", ->
-                link.attr("x1", (d) -> d.source.x)
-                    .attr("y1", (d) -> d.source.y)
-                    .attr("x2", (d) -> d.target.x)
-                    .attr("y2", (d) -> d.target.y)
-
-                node
-                    .attr("x", (d) -> d.x)
-                    .attr("y", (d) -> d.y + 2)
-                    .text((d) -> d.name)
 
 ## Initialise Graph
 
@@ -220,7 +123,7 @@
         h = window.innerHeight
         force = d3.layout.force()
         force.charge -120
-        force.linkDistance 30
+        force.linkDistance 200
         force.size [w, h]
         force.on "tick", -> updateForce()
         undefined
@@ -271,14 +174,26 @@
                 .attr("y", (d) -> d.y + 2)
                 .text((d) -> d.label or d._id)
 
+    linebreak = (str, len) ->
+        words = str.split /\s/
+        lines = []
+        line = ""
+        for word in words
+            if line.length + word.length + 1 < len
+                line = line + " " + word
+            else
+                lines.push line
+                line = word
+        lines.push line
+        result = lines.join "\n"
+        result
+
     updateLabel = (node) ->
         return if node.label isnt undefined
         node.label = ""
-        console.log node._id, typeof node._id
         Meteor.call "lookupTitle", node._id, (err, result) ->
             throw err if err 
-            console.log result, node
-            node.label = result
+            node.label = linebreak result, 20
 
     graphNodes = (nodeList) ->
         nodes = {}
@@ -296,7 +211,6 @@
         force.start()
         nodeList.map updateLabel
         drawGraph(links, nodeList)
-        console.log("HERE", nodes, links)
 
 
 ## Test/experiment
