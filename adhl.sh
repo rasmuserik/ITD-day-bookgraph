@@ -1,4 +1,5 @@
-python genjoin.py > book-book.db
+#python genjoin.py | gzip > book-book.db.z
 echo sorting
-sort --parallel=`node -e "console.log(require('os').cpus().length>>1)"` book-book.db > book-book.db.sorted
-python handlejoin.py < book-book.db.sorted
+#zcat book-book.db.z | sort --compress-program=gzip --parallel=`node -e "console.log(require('os').cpus().length>>1)"` | gzip > book-book.db.sorted
+zcat book-book.db.z | sort | gzip > book-book.db.sorted.gz
+zcat book-book.db.sorted.gz | python handlejoin.py

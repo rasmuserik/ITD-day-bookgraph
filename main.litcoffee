@@ -55,18 +55,25 @@
     patronKlynger = (patron) ->
         (patronDB.findOne {_id: patron}, {books: true}).books
 
+    adhl = (klynge) ->
+        x = (adhlDB.findOne {_id: klynge})
+        console.log "ADHL", x, klynge
+        x
+
     if Meteor.isServer
         Meteor.methods
             neighbours: graphNeighbours
             lookupTitle: lookupTitle
             patronKlynger: patronKlynger
             klyngePatrons: klyngePatrons
+            adhl: adhl
 
 ## Experiments
 
     if Meteor.isClient
         Meteor.startup ->
-            doGraph "34647226"
+            #doGraph "10006220"
+            doGraph "10005802"
     if false
             Meteor.call "klyngePatrons", "34647226", (err, result) ->
                 if err
@@ -104,6 +111,9 @@
 # Traverse/draw graph
 
     doGraph  = (klynge) ->
+        Meteor.call "adhl", klynge, (err, data) ->
+            console.log "adhl", err, data
+
         graph = {}
         graph[klynge] = {_id: klynge}
         patrons = {}

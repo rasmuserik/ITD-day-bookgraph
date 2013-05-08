@@ -8,6 +8,8 @@ count = 0
 avgKeys = 0
 nonZero = 0
 
+db.adhl.remove()
+
 def similarBook(book):
     books[book] = books.get(book, 0) + 1
 
@@ -17,11 +19,11 @@ def bookDone(current):
         return
     result = {}
     for key, val in books.items():
-        if val > 0:
+        if val > 1:
             result[key] = val
     if len(result.items()) > 0:
         nonZero = nonZero + 1
-        db.adhl.update({"_id": current}, {"_id": current, "coloans": result}, upsert=True)
+        db.adhl.insert({"_id": current, "coloans": result})
     avgKeys = avgKeys + len(result.items())
     books = {}
     if count % 500 is 0:
