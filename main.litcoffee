@@ -69,10 +69,10 @@
     if Meteor.isClient
         Meteor.startup ->
             #addGraphNodes "10005802", 15
-            #addGraphNodes "10006220", 15
-            #addGraphNodes "40336644", 15
-            addGraphNodes "19037457", 30
-            
+            #addGraphNodes "10006220", 50
+            #addGraphNodes "40336644", 25
+            #addGraphNodes "19037457", 30
+            addGraphNodes "35378198", 20
 
 # Traverse/draw graph
 
@@ -97,11 +97,12 @@
         nodes = (node for _, node of graph)
         links = []
         for sourceId, source of graph
-            for targetId in source.children
-                if graph[targetId]
-                    links.push
-                        source: source
-                        target: graph[targetId]
+            if source.children
+                for targetId in source.children
+                    if graph[targetId]
+                        links.push
+                            source: source
+                            target: graph[targetId]
                 
         console.log "doDrawGraph", nodes, links
         force.nodes nodes
@@ -185,7 +186,7 @@
                 lines.push line
                 line = word
         lines.push line
-        result = lines.join "\n"
+        result = lines.join " \n"
         result
 
     updateLabel = (node) ->
