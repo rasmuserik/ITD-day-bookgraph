@@ -1,3 +1,7 @@
+# ![logo](https://solsort.com/_logo.png) BibGraph visualisation
+
+Various visualisation of bibliographic data
+
 # Database 
 
 
@@ -68,11 +72,16 @@
 
     if Meteor.isClient
         Meteor.startup ->
+            # Vi unge 
             #addGraphNodes "10005802", 15
+            # Magasiner/blad
             #addGraphNodes "10006220", 50
+            # Film m.m.
             #addGraphNodes "40336644", 25
-            #addGraphNodes "19037457", 30
-            addGraphNodes "35378198", 20
+            # Flunkerne
+            addGraphNodes "19037457", 30
+            # Silkekejserinden
+            # addGraphNodes "35378198", 20
 
 # Traverse/draw graph
 
