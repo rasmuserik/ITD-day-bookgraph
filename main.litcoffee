@@ -100,7 +100,7 @@ Various visualisation of bibliographic data
             addGraphNodes(child, depth) for child in children if depth > 2
 
     if Meteor.isClient then Meteor.startup ->
-        setTimeout doDrawGraph, 4000
+        setTimeout doDrawGraph, 10000
 
     doDrawGraph = ->
         nodes = (node for _, node of graph)
