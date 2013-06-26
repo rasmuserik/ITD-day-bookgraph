@@ -81,7 +81,7 @@ Various visualisation of bibliographic data
             # Flunkerne
             addGraphNodes "19037457", 30
             # Silkekejserinden
-            # addGraphNodes "35378198", 20
+            #addGraphNodes "35378198", 20
 
 # Traverse/draw graph
 
@@ -196,7 +196,7 @@ Various visualisation of bibliographic data
                 line = word
         lines.push line
         result = lines.join " \n"
-        result
+        $('<div/>').html(result).text() # unescape escaped symbols
 
     updateLabel = (node) ->
         return if node.label isnt undefined
