@@ -79,9 +79,9 @@ Various visualisation of bibliographic data
             # Film m.m.
             #addGraphNodes "40336644", 25
             # Flunkerne
-            addGraphNodes "19037457", 30
+            #addGraphNodes "19037457", 30
             # Silkekejserinden
-            #addGraphNodes "35378198", 20
+            addGraphNodes "35378198", 20
 
 # Traverse/draw graph
 
